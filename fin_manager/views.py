@@ -37,20 +37,24 @@ def register(request):
 class ExpenseListView(FormView):
     template_name = 'expenses/expense_list.html'
     form_class = LiabilityForm
-    
+    success_url = '/expenses/'  # Update this with the correct URL
+
     def form_valid(self, form):
+        # Retrieve the user's account
+        account, _ = Account.objects.get_or_create(user=self.request.user)
+        
         # Create a new liability instance and link it to the user's account
-        account = Account.objects.get(user=self.request.user)
         liability = Liability(
             name=form.cleaned_data['name'],
             amount=form.cleaned_data['amount'],
             interest_rate=form.cleaned_data['interest_rate'],
             end_date=form.cleaned_data['end_date'],
             user=self.request.user
-            )
+        )
         liability.save()
         account.liability_list.add(liability)
-        return redirect('expense-list')
+        return super().form_valid(form)
+    
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

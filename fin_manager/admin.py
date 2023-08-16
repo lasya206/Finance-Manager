@@ -5,4 +5,4 @@ from .models import *
 admin.site.register(Account)
 admin.site.register(Investments)
 admin.site.register(Liability)
-admin.site.register(Subscriptions)
+admin.site.register(Subscription)
