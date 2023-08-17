@@ -5,12 +5,9 @@
 	<body>
 	{% block content %}
 		{% if user.is_authenticated %}
-    			<h2>Welcome, {{ user.username }}!</h2>
-
-				<p> Income: {{ account.income }} </p>
-				<p> Expense: {{ account.expense }} </p>
-				<p> {{income}} J {{expense}} K {{inv_income}} L {{ investment.inv_income }} </p>
-			
+    		<h2>Welcome, {{ user.username }}!</h2>
+				<a href="{% url 'expenses' %}">Expenses</a>
+				<a href="{% url 'investments' %}">Investments</a>	
 
 		{% else %}
 			<h2>Welcome! <br> 

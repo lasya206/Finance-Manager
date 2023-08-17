@@ -19,21 +19,7 @@ import base64
 
 
 def home(request):
-    user = request.user
-    try:
-        account = Account.objects.get(user=user)
-        income = account.calculate_income()
-        expense = account.calculate_expense()
-
-        context = {
-                'income': income,
-                'expense': expense,
-        }
-        return render(request, 'fin_manager/home.html', context)
-    
-    except (Account.DoesNotExist, TypeError, UnboundLocalError):
-        account = None
-    
+    user = request.user    
     return render(request, 'fin_manager/home.html')
 
 
@@ -99,39 +85,39 @@ class ExpenseListView(FormView):
             liabilities = account.liability_list.all()
             for liability in liabilities:
                 year_month = liability.date.strftime('%Y-%m')
-                if liability.long_term:
-                    if year_month not in expense_data:
-                        expense_data[year_month] = []
+                if year_month not in expense_data:
+                    expense_data[year_month] = []
 
+                if liability.long_term:
                     expense_data[year_month].append({
                         'name': liability.name,
                         'amount': liability.amount,
                         'end_date': liability.end_date,
                         'date': liability.date,
+                        'monthly_expense': liability.calculate_monthly_expense() if liability.calculate_monthly_expense() > 0 else None
                     })
                 else:
-                    if year_month not in expense_data:
-                        expense_data[year_month] = []
-
                     expense_data[year_month].append({
                         'name': liability.name,
                         'amount': liability.amount,
                         'date': liability.date,
                     })
-        
+
+        # Convert the expense_data into aggregated_data
+        aggregated_data = [{'year_month': key, 'expenses': sum(item['amount'] for item in value)} for key, value in expense_data.items()]
 
         context['expense_data'] = expense_data
+        context['aggregated_data'] = aggregated_data
 
+        # Prepare graph_data for generating the bar chart
         graph_data = {
             'months': [item['year_month'] for item in aggregated_data],
             'expenses': [item['expenses'] for item in aggregated_data]
         }
-        graph_data['chart'] = generate_bar_chart(graph_data)
-        
+        graph_data['chart'] = generate_graph(graph_data)
         context['graph_data'] = graph_data
 
         return context
-
 
 class InvestmentListView(FormView):
     template_name = 'investments/investment_list.html'
