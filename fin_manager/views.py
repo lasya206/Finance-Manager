@@ -11,12 +11,15 @@ from .models import Account, Liability, Investments, Subscription
 from .forms import LiabilityForm, InvestmentForm
 from django.views.generic.edit import FormView
 from django.views.generic import ListView
-
+from django.utils.safestring import mark_safe
 import matplotlib.pyplot as plt
 #import numpy as np
 from io import BytesIO
 import base64
-
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+import plotly.express as px
+from plotly.graph_objs import *
 
 def home(request):
     user = request.user    
@@ -37,18 +40,51 @@ def register(request):
 
 
 def generate_graph(data):
-    plt.bar(data['months'], data['expenses'])
-    plt.xlabel('Month')
-    plt.ylabel('Total Expenses')
-    plt.title('Monthly Expenses')
+    # plt.bar(data['months'], data['expenses'])
+    # plt.xlabel('Month')
+    # plt.ylabel('Total Expenses')
+    # plt.title('Monthly Expenses')
     
-    # Create a PNG image and return it
-    buffer = BytesIO()
-    plt.savefig(buffer, format='png')
-    plt.close()
+    # # Create a PNG image and return it
+    # buffer = BytesIO()
+    # plt.savefig(buffer, format='png')
+    # plt.close()
     
-    # Encode the image in base64
-    return base64.b64encode(buffer.getvalue()).decode()
+    # # Encode the image in base64
+    # return base64.b64encode(buffer.getvalue()).decode()
+    
+    fig = px.bar(data, x='months', y='expenses', title='Monthly Expenses')
+    fig.update_layout(
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font_color='rgba(255,255,255,100)',
+    )
+
+    # fig.update_traces(marker_color='green') 
+    
+    # Convert the figure to a JSON string
+    graph_json = fig.to_json()
+
+    return graph_json
+    # fig = px.bar(data, x='months', y='expenses', title='Monthly Expenses')
+    # fig.update_layout(
+    #     paper_bgcolor='rgba(0,0,0,0)',
+    #     plot_bgcolor='rgba(0,0,0,0)',
+    #     font_color='rgba(255,255,255,100)',
+    #     barmode='relative',  # This line is important to ensure the correct behavior of the bars
+    #     showlegend=True,
+    #     legend=dict(x=0, y=1),
+    #     yaxis=dict(showline=True, showgrid=True, linecolor='rgba(255,255,255,0.2)'),
+    #     xaxis=dict(showline=True, showgrid=True, linecolor='rgba(255,255,255,0.2)'),
+    #     font=dict(color='rgba(255,255,255,0.8)'),
+    #     hovermode="x unified"
+    # )
+
+    # # Set the default color to 'red' for all bars
+    # fig.update_traces(marker_color='red')
+
+    # graph_json = fig.to_json()
+    # return graph_json
 
 
 class ExpenseListView(FormView):
@@ -75,47 +111,136 @@ class ExpenseListView(FormView):
         return super().form_valid(form)
     
     
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     user = self.request.user
+    #     accounts = Account.objects.filter(user=user)
+    #     expense_data = {}
+
+        # for account in accounts:
+        #     liabilities = account.liability_list.all()
+        #     for liability in liabilities:
+        #         if liability.long_term and liability.monthly_expense:
+        #             current_date = liability.date
+        #             while current_date <= liability.end_date:
+        #                 year_month = current_date.strftime('%Y-%m')
+        #                 if year_month not in expense_data:
+        #                     expense_data[year_month] = []
+
+        #                 expense_data[year_month].append({
+        #                     'name': liability.name,
+        #                     'amount': liability.monthly_expense,
+        #                     'date': current_date,
+        #                 })
+
+        #                 # Move to the next month
+        #                 current_date = current_date + relativedelta(months=1)
+        #         else:
+        #             year_month = liability.date.strftime('%Y-%m')
+        #             if year_month not in expense_data:
+        #                 expense_data[year_month] = []
+
+        #             expense_data[year_month].append({
+        #                 'name': liability.name,
+        #                 'amount': liability.amount,
+        #                 'date': liability.date,
+        #             })
+
+    #     # Convert the expense_data into aggregated_data
+    #     aggregated_data = [{'year_month': key, 'expenses': sum(item['amount'] for item in value)} for key, value in expense_data.items()]
+
+    #     context['expense_data'] = expense_data
+    #     context['aggregated_data'] = aggregated_data
+
+    #     # Prepare graph_data for generating the bar chart
+    #     graph_data = {
+    #         'months': [item['year_month'] for item in aggregated_data],
+    #         'expenses': [item['expenses'] for item in aggregated_data]
+    #     }
+    #     graph_data['chart'] = generate_graph(graph_data)
+    #     context['graph_data'] = graph_data
+
+    #     return context
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         accounts = Account.objects.filter(user=user)
+        expense_data_graph = {}
         expense_data = {}
 
         for account in accounts:
             liabilities = account.liability_list.all()
             for liability in liabilities:
-                year_month = liability.date.strftime('%Y-%m')
-                if year_month not in expense_data:
-                    expense_data[year_month] = []
+                if liability.long_term and liability.monthly_expense:
+                    current_date = liability.date
+                    while current_date <= liability.end_date:
+                        year_month = current_date.strftime('%Y-%m')
+                        if year_month not in expense_data_graph:
+                            expense_data_graph[year_month] = []
 
-                if liability.long_term:
-                    expense_data[year_month].append({
-                        'name': liability.name,
-                        'amount': liability.amount,
-                        'end_date': liability.end_date,
-                        'date': liability.date,
-                        'monthly_expense': liability.calculate_monthly_expense() if liability.calculate_monthly_expense() > 0 else None
-                    })
+                        expense_data_graph[year_month].append({
+                            'name': liability.name,
+                            'amount': liability.monthly_expense,
+                            'date': current_date,
+                            'end_date': liability.end_date,
+                        })
+
+                        # Move to the next month
+                        current_date = current_date + relativedelta(months=1)
                 else:
+                    year_month = liability.date.strftime('%Y-%m')
+                    if year_month not in expense_data_graph:
+                        expense_data_graph[year_month] = []
+
+                    expense_data_graph[year_month].append({
+                        'name': liability.name,
+                        'amount': liability.amount,
+                        'date': liability.date,
+                    })               
+
+        for account in accounts:
+            liabilities = account.liability_list.all()
+            for liability in liabilities:
+                if liability.long_term and liability.monthly_expense:
+                    current_date = liability.date
+                    year_month = current_date.strftime('%Y-%m')
+                    if year_month not in expense_data:
+                        expense_data[year_month] = []
+
+                    expense_data[year_month].append({
+                        'name': liability.name,
+                        'amount': liability.monthly_expense,
+                        'date': current_date,
+                        'end_date': liability.end_date,
+                        'long_term': liability.long_term,
+                    })
+
+                        # Move to the next month
+                    current_date = current_date + relativedelta(months=1)
+                else:
+                    year_month = liability.date.strftime('%Y-%m')
+                    if year_month not in expense_data:
+                        expense_data[year_month] = []
+
                     expense_data[year_month].append({
                         'name': liability.name,
                         'amount': liability.amount,
                         'date': liability.date,
-                    })
-
-        # Convert the expense_data into aggregated_data
-        aggregated_data = [{'year_month': key, 'expenses': sum(item['amount'] for item in value)} for key, value in expense_data.items()]
+                    })              
+        # Convert the expense_data_graph into aggregated_data
+        aggregated_data = [{'year_month': key, 'expenses': sum(item['amount'] for item in value)} for key, value in expense_data_graph.items()]
 
         context['expense_data'] = expense_data
         context['aggregated_data'] = aggregated_data
 
-        # Prepare graph_data for generating the bar chart
+        # Prepare graph_data for generating the Plotly graph
         graph_data = {
             'months': [item['year_month'] for item in aggregated_data],
             'expenses': [item['expenses'] for item in aggregated_data]
         }
         graph_data['chart'] = generate_graph(graph_data)
-        context['graph_data'] = graph_data
+        context['graph_data'] = mark_safe(graph_data['chart'])  # Use mark_safe to render the JSON as HTML
 
         return context
 

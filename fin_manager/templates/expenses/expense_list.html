@@ -1,80 +1,151 @@
+{% load static %}
+<head>
+  <link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+
 {% block content %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-  $(document).ready(function() {
-    // Get a reference to the long_term checkbox and the fields to toggle
-    var longTermCheckbox = $('#id_long_term');
-    var longTermFields = $('#interest_rate, #end_date');
-    
-    // Initially hide the long_term fields
-    longTermFields.hide();
-    
-    // Toggle the long_term fields based on checkbox selection
-    longTermCheckbox.on('change', function() {
-      if (longTermCheckbox.is(':checked')) {
-        longTermFields.show();
-      } else {
-        longTermFields.hide();
-      }
+
+<body>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      // Get a reference to the long_term checkbox and the fields to toggle
+      var longTermCheckbox = $('#id_long_term');
+      var longTermFields = $('#interest_rate, #end_date');
+      
+      // Initially hide the long_term fields
+      longTermFields.hide();
+      
+      // Toggle the long_term fields based on checkbox selection
+      longTermCheckbox.on('change', function() {
+        if (longTermCheckbox.is(':checked')) {
+          longTermFields.show();
+        } else {
+          longTermFields.hide();
+        }
+      });
     });
-  });
-  </script>
-
-
-  <h2>Add Long Term Liability or Daily Expense</h2>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.long_term.label_tag }}
-    {{ form.long_term }}
-    <br> <br>
-    {{ form.name.label_tag }}
-    {{ form.name }}
-    {{ form.amount.label_tag }}
-    {{ form.amount }}
-    <br> <br>
-    {{ form.date.label_tag }}
-    {{ form.date }}
-    <!-- Display long_term checkbox -->
-    <br> <br>
-
-    <!-- Display fields based on long_term value using if conditions -->
-    <div id="end_date">
-      {{ form.end_date.label_tag }}
-      {{ form.end_date }}
-    </div>
-    <br>
-    <div id="interest_rate">
-      {{ form.interest_rate.label_tag }}
-      {{ form.interest_rate }}
-    </div>
-    <br>
-    <button type="submit">Add Liability</button>
-  </form>
+    </script>
 
 
 
+    <h2>Add Long Term Liability or Daily Expense</h2>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.long_term.label_tag }}
+      {{ form.long_term }}
+      <br> <br>
+      {{ form.name.label_tag }}
+      {{ form.name }}
+      {{ form.amount.label_tag }}
+      {{ form.amount }}
+      <br> <br>
+      {{ form.date.label_tag }}
+      {{ form.date }}
+      <!-- Display long_term checkbox -->
+      <br> <br>
 
-  <h2>Expense List</h2>
-  <div class="expenses">
-    {% for year_month, liabilities in expense_data.items %}
-      <div class="month">
-        <h3> Month: {{ year_month }}</h3>
-        <ul>
-          {% for liability in liabilities %}
-            <li>
-              {{ liability.name }} - ${{ liability.amount }}
-              <span class="end-date"> End Date: {{ liability.end_date }}</span>
-            </li>
-          {% endfor %}
-        </ul>
+      <!-- Display fields based on long_term value using if conditions -->
+      <div id="end_date">
+        {{ form.end_date.label_tag }}
+        {{ form.end_date }}
       </div>
-    {% endfor %}
-  </div>
+      <br>
+      <div id="interest_rate">
+        {{ form.interest_rate.label_tag }}
+        {{ form.interest_rate }}
+      </div>
+      <br>
+      <button type="submit">Add Liability</button>
+    </form>
 
 
-  <div class="bar-chart">
-    <h2>Monthly Expenses Bar Chart</h2>
-    <img src="data:image/png;base64,{{ graph_data.chart }}" alt="Monthly Expenses Bar Chart">
-  </div>
+
+
+    <h2>Expense List</h2>
+    <div class="expenses">
+      {% for year_month, liabilities in expense_data.items %}
+        <div class="month">
+          <h3> Month: {{ year_month }}</h3>
+          <ul>
+            {% for liability in liabilities %}
+              <li>
+                {{ liability.name }} - ${{ liability.amount }}
+                {% if liability.long_term %}
+                  <span class="date"> Date From: {{ liability.date }} To: {{ liability.end_date }}</span>
+                {% else %}
+                  <span class="date"> Date: {{ liability.date }}</span>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    </div>
+
+      <!-- <div class="expenses">
+        {% for year_month, liabilities in expense_data.items %}
+            <div class="month">
+                <h3> Month: {{ liabilities.0.date|date:"F Y" }}</h3>
+                  <ul>
+                      {% for liability in liabilities %}
+                          <li>
+                              {{ liability.name }} - ${{ liability.amount }}
+                              {% if liability.long_term %}
+                                  <span class="date-range"> Date Range: {{ liability.date }} to {{ liability.end_date }}</span>
+                              {% else %}
+                                  <span class="date"> Date: {{ liability.date }}</span>
+                              {% endif %}
+                          </li>
+                      {% endfor %}
+                  </ul>
+              </div>
+          {% endfor %}
+      </div>
+  -->
+
+
+    <!-- <div class="bar-chart">
+      <h2>Monthly Expenses Bar Chart</h2>
+      <img src="data:image/png;base64,{{ graph_data.chart }}" alt="Monthly Expenses Bar Chart">
+    </div> -->
+
+
+    <label for="saving-goal">Monthly Saving Goal:</label>
+    <input type="number" id="saving-goal" name="saving-goal" step="any">
+    <button id="set-saving-goal">Set Saving Goal</button>
+    <div class="bar-chart">
+        <h2>Monthly Expenses Bar Chart</h2>
+        <div class="plotly-chart" id="plotly-chart"></div>
+    </div>
+    
+    <script>
+        // Initialize the Plotly chart
+        var graphData = {{ graph_data|safe }};
+        Plotly.newPlot('plotly-chart', graphData.data, graphData.layout);
+    </script>
+    
+<script>
+  function updateBarColors() {
+      var graphData = {{ graph_data|safe }};
+      var savingGoal = parseFloat(document.getElementById('saving-goal').value);
+
+      // Update bar colors based on saving goal
+      var traces = graphData.data;
+      for (var i = 0; i < traces.length; i++) {
+          var trace = traces[i];
+          var barColor = trace.y[0] < savingGoal ? 'green' : 'red';
+          trace.marker.color = barColor;
+      }
+
+      Plotly.react('plotly-chart', graphData.data, graphData.layout);
+  }
+
+  // Add click event listener to the "Set Saving Goal" button
+  document.getElementById('set-saving-goal').addEventListener('click', updateBarColors);
+</script>
+</body>
 
   {% endblock %}

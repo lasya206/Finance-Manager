@@ -27,19 +27,18 @@ class LiabilityForm(forms.ModelForm):
             interest_rate = cleaned_data.get('interest_rate')
             end_date = cleaned_data.get('end_date')
             amount = cleaned_data.get('amount')
-#           start_date = cleaned_data.get('date')
+#            start_date = cleaned_data.get('date')
             cleaned_data['long_term'] = True
-            cleaned_data['date'] = start_date
             # Calculate monthly_expense based on interest_rate and remaining months
             # You need to implement the calculation logic here
-            
+
             #cleaned_data['monthly_expense'] = calculated_monthly_expense_value
 
         else:
             # If it's a one-time expense, hide unnecessary fields and set values to NULL
             cleaned_data['end_date'] = None
             cleaned_data['interest_rate'] = None
-            cleaned_data['date'] = start_date
+
         return cleaned_data
 
 
