@@ -7,17 +7,23 @@
 	</head>
 	<body>
 	{% block content %}
+	<div>
 		{% if user.is_authenticated %}
     		<h2>Welcome, {{ user.username }}!</h2>
 				<a href="{% url 'expenses' %}">Open Expenses</a>
 		{% else %}
-			<h2>Welcome! <br> 
-				<a href="{% url 'register' %}">Register</a> or
-				<a href="{% url 'login' %}">Login</a>
-				on our site </h2>
-		
+			<div class="home">
+			<h2>Welcome! </h2>
+				<div class="reg"> 
+				<h2><a href="{% url 'register' %}">Register</a> </h2>
+				</div>
+				<div class="log">
+				<h2> <a href="{% url 'login' %}">Login</a> </h2>
+				</div>
+			</div>
 		{% endif %}
-	{% endblock %}
+	</div>
+		{% endblock %}
 
 
 	</body>
