@@ -1,5 +1,5 @@
 from django import forms
-from .models import Liability, Investments
+from .models import Liability
 
 
 class LiabilityForm(forms.ModelForm):
@@ -40,16 +40,3 @@ class LiabilityForm(forms.ModelForm):
             cleaned_data['interest_rate'] = None
 
         return cleaned_data
-
-
-class InvestmentForm(forms.ModelForm):
-    class Meta:
-        model = Investments
-        fields = ['name', 'amount', 'return_rate', 'end_date']
-        
-        widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'amount': forms.NumberInput(attrs={'class': 'form-control'}),
-            'return_rate': forms.NumberInput(attrs={'class': 'form-control'}),
-            'end_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-        }

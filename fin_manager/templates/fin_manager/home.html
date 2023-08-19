@@ -1,14 +1,15 @@
+{% load static %}
+
 <html>
 	<head>
 		<title>Home</title>
+		<link rel="stylesheet" type="text/css" href="{% static 'css/home.css' %}">
 	</head>
 	<body>
 	{% block content %}
 		{% if user.is_authenticated %}
     		<h2>Welcome, {{ user.username }}!</h2>
-				<a href="{% url 'expenses' %}">Expenses</a>
-				<a href="{% url 'investments' %}">Investments</a>	
-
+				<a href="{% url 'expenses' %}">Open Expenses</a>
 		{% else %}
 			<h2>Welcome! <br> 
 				<a href="{% url 'register' %}">Register</a> or
